@@ -21,7 +21,7 @@ public class ElectricFloorConfig {
 			IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantIntProvider.create(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(ElectricFloorConfig::getTicksUntilClose),
 			Codec.INT.optionalFieldOf("spawn_platform_delay", 20 * 2).forGetter(ElectricFloorConfig::getSpawnPlatformDelay),
 			Codec.INT.optionalFieldOf("delay", 5).forGetter(ElectricFloorConfig::getDelay),
-			Codec.STRING.optionalFieldOf("statistic_bundle_namespace").forGetter(ElectricFloorConfig::getStatisticBundleNamespace)
+			GameStatisticBundle.NAMESPACE_CODEC.optionalFieldOf("statistic_bundle_namespace").forGetter(ElectricFloorConfig::getStatisticBundleNamespace)
 		).apply(instance, ElectricFloorConfig::new);
 	});
 
