@@ -2,6 +2,8 @@ package io.github.haykam821.electricfloor.game.map;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
@@ -26,7 +28,28 @@ public class ElectricFloorMap {
 		return this.box;
 	}
 
+	public Vec3d getGuideTextPos() {
+		return this.createCenterPos(2.2, 0);
+	}
+
+	public Vec3d getWaitingSpawnPos() {
+		return this.createCenterPos(1, 4);
+	}
+
+	public Vec3d getSpectatorSpawnPos() {
+		return this.createCenterPos(4, 0);
+	}
+
 	public ChunkGenerator createGenerator(MinecraftServer server) {
 		return new TemplateChunkGenerator(server, this.template);
+	}
+
+	private Vec3d createCenterPos(double y, double offsetZ) {
+		Vec3d center = this.getPlatform().center();
+
+		double maxOffsetZ = this.platform.size().getZ() / 2 - 0.5;
+		double clampedOffsetZ = MathHelper.clamp(offsetZ, -maxOffsetZ, maxOffsetZ);
+
+		return new Vec3d(center.getX(), y, center.getZ() - clampedOffsetZ);
 	}
 }

@@ -1,8 +1,12 @@
 package io.github.haykam821.electricfloor.game.phase;
 
+import eu.pb4.polymer.virtualentity.api.ElementHolder;
+import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import eu.pb4.polymer.virtualentity.api.attachment.HolderAttachment;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
+import io.github.haykam821.electricfloor.game.map.ElectricFloorGuideText;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -27,6 +31,8 @@ public class ElectricFloorWaitingPhase {
 	private final ElectricFloorMap map;
 	private final ElectricFloorConfig config;
 
+	private HolderAttachment guideText;
+
 	public ElectricFloorWaitingPhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
 		this.gameSpace = gameSpace;
 		this.world = world;
@@ -48,19 +54,30 @@ public class ElectricFloorWaitingPhase {
 			ElectricFloorActivePhase.setRules(activity);
 
 			// Listeners
+			activity.listen(GameActivityEvents.ENABLE, phase::enable);
 			activity.listen(GamePlayerEvents.OFFER, phase::offerPlayer);
 			activity.listen(PlayerDeathEvent.EVENT, phase::onPlayerDeath);
 			activity.listen(GameActivityEvents.REQUEST_START, phase::requestStart);
 		});
 	}
 
+	private void enable() {
+		// Spawn guide text
+		Vec3d guideTextPos = this.map.getGuideTextPos();
+
+		if (guideTextPos != null) {
+			ElementHolder holder = ElectricFloorGuideText.createElementHolder();
+			this.guideText = ChunkAttachment.of(holder, world, guideTextPos);
+		}
+	}
+
 	public GameResult requestStart() {
-		ElectricFloorActivePhase.open(this.gameSpace, this.world, this.map, this.config);
+		ElectricFloorActivePhase.open(this.gameSpace, this.world, this.map, this.config, this.guideText);
 		return GameResult.ok();
 	}
 
 	public PlayerOfferResult offerPlayer(PlayerOffer offer) {
-		return offer.accept(this.world, this.getSpawnPos()).and(() -> {
+		return offer.accept(this.world, this.map.getWaitingSpawnPos()).and(() -> {
 			offer.player().changeGameMode(GameMode.ADVENTURE);
 		});
 	}
@@ -71,13 +88,8 @@ public class ElectricFloorWaitingPhase {
 		return ActionResult.SUCCESS;
 	}
 
-	private Vec3d getSpawnPos() {
-		Vec3d center = this.map.getPlatform().center();
-		return new Vec3d(center.getX(), 1, center.getZ());
-	}
-
 	private void spawnPlayer(ServerPlayerEntity player) {
-		Vec3d spawnPos = this.getSpawnPos();
+		Vec3d spawnPos = this.map.getWaitingSpawnPos();
 		player.teleport(this.world, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(), 0, 0);
 	}
 }

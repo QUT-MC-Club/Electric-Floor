@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import eu.pb4.polymer.virtualentity.api.attachment.HolderAttachment;
 import io.github.haykam821.electricfloor.Main;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
@@ -42,16 +43,19 @@ public class ElectricFloorActivePhase {
 	private final ElectricFloorConfig config;
 	private final GameStatisticBundle statistics;
 	private final Set<ServerPlayerEntity> players = new HashSet<>();
+	private HolderAttachment guideText;
 	private boolean singleplayer;
 	private final Long2IntMap convertPositions = new Long2IntOpenHashMap();
 	private int timeElapsed = 0;
 	private int ticksUntilClose = -1;
 
-	public ElectricFloorActivePhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
+	public ElectricFloorActivePhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config, HolderAttachment guideText) {
 		this.world = world;
 		this.gameSpace = gameSpace;
 		this.map = map;
 		this.config = config;
+
+		this.guideText = guideText;
 
 		this.statistics = config.getStatisticBundle(gameSpace);
 	}
@@ -64,9 +68,9 @@ public class ElectricFloorActivePhase {
 		activity.deny(GameRuleType.PVP);
 	}
 
-	public static void open(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
+	public static void open(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config, HolderAttachment guideText) {
 		gameSpace.setActivity(activity -> {
-			ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameSpace, world, map, config);
+			ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameSpace, world, map, config, guideText);
 			gameSpace.getPlayers().forEach(phase.players::add);
 
 			ElectricFloorActivePhase.setRules(activity);
@@ -111,6 +115,15 @@ public class ElectricFloorActivePhase {
 	}
 
 	public void tick() {
+		this.timeElapsed += 1;
+
+		if (this.guideText != null) {
+			if (this.timeElapsed == this.config.getGuideTicks()) {
+				this.guideText.destroy();
+				this.guideText = null;
+			}
+		}
+
 		// Decrease ticks until game end to zero
 		if (this.isGameEnding()) {
 			if (this.ticksUntilClose == 0) {
@@ -120,8 +133,6 @@ public class ElectricFloorActivePhase {
 			this.ticksUntilClose -= 1;
 			return;
 		}
-
-		this.timeElapsed += 1;
 
 		BlockPos.Mutable pos = new BlockPos.Mutable();
 
@@ -199,17 +210,12 @@ public class ElectricFloorActivePhase {
 		return Text.translatable("text.electricfloor.no_winners").formatted(Formatting.GOLD);
 	}
 
-	private Vec3d getSpectatorSpawnPos() {
-		Vec3d center = this.map.getPlatform().center();
-		return new Vec3d(center.getX(), 4, center.getZ());
-	}
-
 	private void setSpectator(ServerPlayerEntity player) {
 		player.changeGameMode(GameMode.SPECTATOR);
 	}
 
 	public PlayerOfferResult offerPlayer(PlayerOffer offer) {
-		return offer.accept(this.world, this.getSpectatorSpawnPos()).and(() -> {
+		return offer.accept(this.world, this.map.getSpectatorSpawnPos()).and(() -> {
 			this.setSpectator(offer.player());
 		});
 	}
