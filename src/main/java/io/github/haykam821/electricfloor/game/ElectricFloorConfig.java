@@ -22,6 +22,7 @@ public class ElectricFloorConfig {
 			IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantIntProvider.create(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(ElectricFloorConfig::getTicksUntilClose),
 			Codec.INT.optionalFieldOf("spawn_platform_delay", 20 * 2).forGetter(ElectricFloorConfig::getSpawnPlatformDelay),
 			Codec.INT.optionalFieldOf("delay", 5).forGetter(ElectricFloorConfig::getDelay),
+			Codec.BOOL.optionalFieldOf("night", true).forGetter(ElectricFloorConfig::isNight),
 			GameStatisticBundle.NAMESPACE_CODEC.optionalFieldOf("statistic_bundle_namespace").forGetter(ElectricFloorConfig::getStatisticBundleNamespace)
 		).apply(instance, ElectricFloorConfig::new);
 	});
@@ -32,15 +33,17 @@ public class ElectricFloorConfig {
 	private final IntProvider ticksUntilClose;
 	private final int spawnPlatformDelay;
 	private final int delay;
+	private final boolean night;
 	private final Optional<String> statisticBundleNamespace;
 
-	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, int guideTicks, IntProvider ticksUntilClose, int spawnPlatformDelay, int delay, Optional<String> statisticBundleNamespace) {
+	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, int guideTicks, IntProvider ticksUntilClose, int spawnPlatformDelay, int delay, boolean night, Optional<String> statisticBundleNamespace) {
 		this.mapConfig = mapConfig;
 		this.playerConfig = playerConfig;
 		this.guideTicks = guideTicks;
 		this.ticksUntilClose = ticksUntilClose;
 		this.spawnPlatformDelay = spawnPlatformDelay;
 		this.delay = delay;
+		this.night = night;
 		this.statisticBundleNamespace = statisticBundleNamespace;
 	}
 
@@ -66,6 +69,10 @@ public class ElectricFloorConfig {
 
 	public int getDelay() {
 		return this.delay;
+	}
+
+	public boolean isNight() {
+		return this.night;
 	}
 
 	public Optional<String> getStatisticBundleNamespace() {

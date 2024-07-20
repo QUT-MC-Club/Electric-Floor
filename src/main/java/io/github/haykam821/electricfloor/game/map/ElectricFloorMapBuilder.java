@@ -1,5 +1,6 @@
 package io.github.haykam821.electricfloor.game.map;
 
+import io.github.haykam821.electricfloor.Main;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -49,10 +50,19 @@ public class ElectricFloorMapBuilder {
 	}
 
 	public void build(BlockBounds bounds, MapTemplate template, ElectricFloorMapConfig mapConfig) {
+		BlockPos.Mutable upPos = new BlockPos.Mutable();
+
 		for (BlockPos pos : bounds) {
 			BlockState state = this.getBlockState(pos, bounds, mapConfig);
 			if (state != null) {
 				template.setBlockState(pos, state);
+
+				BlockState lightState = Main.getFloorLightState(state, this.config.isNight());
+
+				if (lightState != null) {
+					upPos.set(pos.getX(), pos.getY() + 1, pos.getZ());
+					template.setBlockState(upPos, lightState);
+				}
 			}
 		}
 	}

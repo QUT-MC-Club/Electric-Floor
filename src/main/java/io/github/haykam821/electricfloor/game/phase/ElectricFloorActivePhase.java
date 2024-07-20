@@ -108,7 +108,7 @@ public class ElectricFloorActivePhase {
 
 			// Create spawn platform
 			for (BlockPos pos : BlockPos.iterate((int) x - 1, 0, (int) z - 1, (int) x, 0, (int) z)) {
-				this.world.setBlockState(pos, Main.SPAWN_PLATFORM.getDefaultState());
+				this.setBlockState(pos, Main.SPAWN_PLATFORM.getDefaultState());
 				this.convertPositions.putIfAbsent(pos.asLong(), this.config.getSpawnPlatformDelay());
 			}
 		}
@@ -146,7 +146,7 @@ public class ElectricFloorActivePhase {
 				pos.set(convertPos);
 		
 				BlockState state = this.world.getBlockState(pos);
-				this.world.setBlockState(pos, Main.getConvertedFloor(state));
+				this.setBlockState(pos, Main.getConvertedFloor(state));
 
 				iterator.remove();
 			} else {
@@ -259,5 +259,15 @@ public class ElectricFloorActivePhase {
 
 	private boolean isGameEnding() {
 		return this.ticksUntilClose >= 0;
+	}
+
+	private void setBlockState(BlockPos pos, BlockState state) {
+		this.world.setBlockState(pos, state);
+
+		BlockState lightState = Main.getFloorLightState(state, this.config.isNight());
+
+		if (lightState != null) {
+			this.world.setBlockState(pos.up(), lightState);
+		}
 	}
 }

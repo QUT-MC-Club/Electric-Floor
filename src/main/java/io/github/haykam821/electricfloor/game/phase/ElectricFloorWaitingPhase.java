@@ -7,6 +7,7 @@ import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorGuideText;
+import net.minecraft.SharedConstants;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -26,6 +27,8 @@ import xyz.nucleoid.plasmid.game.player.PlayerOfferResult;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class ElectricFloorWaitingPhase {
+	private static final int NIGHT_TICKS = SharedConstants.TICKS_PER_MINUTE * 15;
+
 	private final GameSpace gameSpace;
 	private final ServerWorld world;
 	private final ElectricFloorMap map;
@@ -41,16 +44,22 @@ public class ElectricFloorWaitingPhase {
 	}
 
 	public static GameOpenProcedure open(GameOpenContext<ElectricFloorConfig> context) {
-		ElectricFloorMapBuilder mapBuilder = new ElectricFloorMapBuilder(context.config());
+		ElectricFloorConfig config = context.config();
+
+		ElectricFloorMapBuilder mapBuilder = new ElectricFloorMapBuilder(config);
 		ElectricFloorMap map = mapBuilder.create();
 
 		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
 			.setGenerator(map.createGenerator(context.server()));
 
-		return context.openWithWorld(worldConfig, (activity, world) -> {
-			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(activity.getGameSpace(), world, map, context.config());
+		if (config.isNight()) {
+			worldConfig.setTimeOfDay(NIGHT_TICKS);
+		}
 
-			GameWaitingLobby.addTo(activity, context.config().getPlayerConfig());
+		return context.openWithWorld(worldConfig, (activity, world) -> {
+			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(activity.getGameSpace(), world, map, config);
+
+			GameWaitingLobby.addTo(activity, config.getPlayerConfig());
 			ElectricFloorActivePhase.setRules(activity);
 
 			// Listeners
@@ -66,7 +75,7 @@ public class ElectricFloorWaitingPhase {
 		Vec3d guideTextPos = this.map.getGuideTextPos();
 
 		if (guideTextPos != null) {
-			ElementHolder holder = ElectricFloorGuideText.createElementHolder();
+			ElementHolder holder = ElectricFloorGuideText.createElementHolder(this.config.isNight());
 			this.guideText = ChunkAttachment.of(holder, world, guideTextPos);
 		}
 	}
